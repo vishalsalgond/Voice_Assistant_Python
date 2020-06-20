@@ -1,5 +1,2 @@
 credentials.json
-
-# Ignore pickles
-*.pkl
-**/*.pkl
+*.pickle
