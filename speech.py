@@ -11,6 +11,7 @@ import playsound
 import speech_recognition as sr
 from gtts import gTTS
 import pytz
+import subprocess
 
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
@@ -22,6 +23,7 @@ def speak(text):
     filename = "voice.mp3"
     tts.save(filename)
     playsound.playsound(filename)
+    os.remove(filename)
 
 def get_audio():
     r = sr.Recognizer()
@@ -31,8 +33,10 @@ def get_audio():
 
         try:
             said = r.recognize_google(audio)
+            print(said)
         except Exception as e:
-            print("Exception :" + str(e))
+            return -1
+            # print("Exception :" + str(e))
 
     return said
 
@@ -42,7 +46,7 @@ def authenticate_google():
     if os.path.exists('token.pickle'):
         with open('token.pickle', 'rb') as token:
             creds = pickle.load(token)
-    # If there are no (valid) credentials available, let the user log in.
+    
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
@@ -50,7 +54,7 @@ def authenticate_google():
             flow = InstalledAppFlow.from_client_secrets_file(
                 'credentials.json', SCOPES)
             creds = flow.run_local_server(port=0)
-        # Save the credentials for the next run
+        
         with open('token.pickle', 'wb') as token:
             pickle.dump(creds, token)
 
@@ -85,10 +89,10 @@ def get_events(day, service):
             print(start, event['summary'])
             start_time = str(start.split("T")[1].split("-")[0])[:2]
 
-            if int(start_time.split(":")[0]) < 12:  # if the event is in the morning
+            if int(start_time.split(":")[0]) < 12:  
                 start_time = start_time + "am"
             else:
-                start_time = str(int(start_time.split(":")[0])-12)  # convert 24 hour time to regular
+                start_time = str(int(start_time.split(":")[0])-12)  
                 start_time = start_time + "pm"  
 
             print(start_time)
@@ -151,20 +155,85 @@ def get_date(text):
 
     return datetime.date(month=month, day=day, year=year)
 
-print("Say OK Assistant")
-first = get_audio()
-print(first)
-if "ok assistant" or "assistant" or "ok" in first.lower():
-    speak("Hey there! How can I help you?")
+def note(text):
+    date  = datetime.datetime.now()
+    file_name = str(date).replace(":","-") + "-note.txt"
+
+    with open(file_name, "w") as f:
+        f.write(text)
+
+    subprocess.Popen(["notepad.exe", file_name])
+
+
+def open_something(text):
+
+    if "chrome" in text.lower():
+        file_path = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+
+    if "word" in text.lower():
+        file_path = r"C:\Program Files (x86)\Microsoft Office\root\Office16\WINWORD.exe" 
+
+    if "powerpoint" in text.lower():
+        file_path = r"C:\Program Files (x86)\Microsoft Office\root\Office16\POWERPNT.exe"
+
+    if "excel" in text.lower():
+        file_path = r"C:\Program Files (x86)\Microsoft Office\root\Office16\EXCEL.exe"
+
+    if "firefox" in text.lower():
+        file_path = r"C:\Program Files\Mozilla Firefox\firefox.exe"
+        
+    subprocess.Popen(file_path)
+
 
 SERVICE = authenticate_google()
-text = get_audio()
 
-CALENDAR_STRS = ["what do i have", "do i have plans", "am i busy"]
-for phrase in CALENDAR_STRS:
-    if phrase in text.lower():
-        date = get_date(text)
-        if date:
-            get_events(date, SERVICE)
-        else:
-            speak("Please Try Again")
+i = 0
+while(True):
+    i+= 1 
+    if i==1:
+        print("Try saying 'Hello Assistant'")
+    else:
+        speak("Do you want me to do anyting else?")
+
+    text = get_audio()
+    if text==-1:
+        break
+    if text == "no":
+        speak("Okay")
+        break
+
+    text = text.lower()
+    if "hello" or "assistant" or "hello assistant" in text:
+        speak("How can I help you?")
+        text = get_audio()
+
+    if text==-1:
+        break
+
+    #Goole Calender
+    CALENDAR_STRS = ["what do i have", "do i have", "am i busy"]
+    for phrase in CALENDAR_STRS:
+        if phrase in text.lower():
+            date = get_date(text)
+            if date:
+                get_events(date, SERVICE)
+            else:
+                speak("Sorry,I don't understand")
+
+
+    #Making a note in notepad
+    NOTE_STRS = ["make a note", "write this down", "remember this", "type this"]
+    for phrase in NOTE_STRS:
+        if phrase in text.lower():
+            speak("What would you like me to write down? ")
+            write_down = get_audio()
+            note(write_down)
+            speak("I have made a note of that.")
+
+    #Opening something
+    if "open" in text.lower():
+        open_something(text)
+
+
+
+
