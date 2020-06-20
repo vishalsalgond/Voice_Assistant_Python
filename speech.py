@@ -5,6 +5,7 @@ import os.path
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+from newsapi import NewsApiClient
 import os
 import time
 import playsound
@@ -12,6 +13,10 @@ import speech_recognition as sr
 from gtts import gTTS
 import pytz
 import subprocess
+import requests
+from bs4 import BeautifulSoup
+from selenium import webdriver
+
 
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
@@ -166,39 +171,81 @@ def note(text):
 
 
 def open_something(text):
+    text = text.lower()
 
-    if "chrome" in text.lower():
+    if "chrome" in text:
+        speak("Opening google chrome")
         file_path = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
 
-    if "word" in text.lower():
+    elif "word" in text:
+        speak("Opening Word")
         file_path = r"C:\Program Files (x86)\Microsoft Office\root\Office16\WINWORD.exe" 
 
-    if "powerpoint" in text.lower():
+    elif "powerpoint" in text:
+        speak("Opening Powerpoint")
         file_path = r"C:\Program Files (x86)\Microsoft Office\root\Office16\POWERPNT.exe"
 
-    if "excel" in text.lower():
+    elif "excel" in text:
+        speak("Opening Excel")
         file_path = r"C:\Program Files (x86)\Microsoft Office\root\Office16\EXCEL.exe"
 
-    if "firefox" in text.lower():
+    elif "firefox" in text:
+        speak("Opening Firefox")
         file_path = r"C:\Program Files\Mozilla Firefox\firefox.exe"
+
+    elif "google" in text:
+        speak("Opening google")
+        browser = webdriver.Firefox()
+        browser.get("http://www.google.com")
+        return
+
+    elif "facebook" in text:
+        speak("Opening facebook")
+        browser = webdriver.Firefox()
+        browser.get("http://www.facebook.com")
+        return
+
+    elif "youtube" in text:
+        speak("Opening Youtube")
+        browser = webdriver.Firefox()
+        browser.get("http://www.youtube.com")
+        return
+
+    elif "gmail" in text:
+        speak("Opening Gmail")
+        browser = webdriver.Firefox()
+        browser.get("http://www.gmail.com")
+        return
         
     subprocess.Popen(file_path)
+    
+
+def get_news():
+    api_key = os.environ.get('NEWS_API_KEY')
+    newsapi = NewsApiClient(api_key=api_key)
+    
+    top_headlines = newsapi.get_top_headlines(sources='bbc-news,the-verge,cnn',
+                                            language='en')
+                                            
+    for i in range(min(len(top_headlines['articles']),5)):
+        print(top_headlines['articles'][i]['description'])
+        speak(top_headlines['articles'][i]['description'])
 
 
 SERVICE = authenticate_google()
-
 i = 0
+
 while(True):
     i+= 1 
     if i==1:
-        print("Try saying 'Hello Assistant'")
+        print("Try saying 'Hello Assistant' ")
     else:
         speak("Do you want me to do anyting else?")
 
     text = get_audio()
     if text==-1:
         break
-    if text == "no":
+    if "no" in text:
         speak("Okay")
         break
 
@@ -233,6 +280,11 @@ while(True):
     #Opening something
     if "open" in text.lower():
         open_something(text)
+
+
+    #Showing news
+    if "news" in text.lower():
+        get_news()
 
 
 
