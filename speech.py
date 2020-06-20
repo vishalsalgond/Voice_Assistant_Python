@@ -232,21 +232,29 @@ def get_news():
         speak(top_headlines['articles'][i]['description'])
 
 
+def search_on_google(query):
+    number_result = 10
+    google_url = "https://www.google.com/search?q=" + query + "&num=" + str(number_result)
+    browser = webdriver.Firefox()
+    speak("showing search results on google")
+    browser.get(google_url)
+
 SERVICE = authenticate_google()
 i = 0
 
 while(True):
+    
     i+= 1 
     if i==1:
         print("Try saying 'Hello Assistant' ")
     else:
-        speak("Do you want me to do anyting else?")
+        speak("Is there anything else you want me to do?")
 
     text = get_audio()
     if text==-1:
         break
     if "no" in text:
-        speak("Okay")
+        speak("Okay. Goodbye.")
         break
 
     text = text.lower()
@@ -257,15 +265,25 @@ while(True):
     if text==-1:
         break
 
+    #when user is oversmart
+    if "who are you" or "what can you do" in text.lower():
+        speak("I'm your personal voice assistant")
+        speak("I can help you with anything!")
+        text = get_audio()
+        if text==-1:
+            break
+        
+    done = 0
     #Goole Calender
-    CALENDAR_STRS = ["what do i have", "do i have", "am i busy"]
+    CALENDAR_STRS = ["what do i have","google calender", "do i have", "am i busy"]
     for phrase in CALENDAR_STRS:
         if phrase in text.lower():
             date = get_date(text)
             if date:
                 get_events(date, SERVICE)
             else:
-                speak("Sorry,I don't understand")
+                speak("Sorry, I did't understand!")
+            done = 1
 
 
     #Making a note in notepad
@@ -276,15 +294,22 @@ while(True):
             write_down = get_audio()
             note(write_down)
             speak("I have made a note of that.")
+            done = 1
+
+    if done:
+        break
 
     #Opening something
     if "open" in text.lower():
         open_something(text)
 
-
     #Showing news
-    if "news" in text.lower():
+    elif "news" or "headlines" in text.lower():
         get_news()
+
+    #Normal google search
+    else:
+        search_on_google(text)
 
 
 
