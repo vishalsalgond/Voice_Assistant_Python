@@ -17,5 +17,5 @@ This is a simple Voice Assistant made in Python using [Google's text-to-speech (
 ## API's that I have used
 
 - [News API](https://newsapi.org/)
-- [Google API Calender](https://developers.google.com/calendar)
+- [Google Calender API](https://developers.google.com/calendar)
 
